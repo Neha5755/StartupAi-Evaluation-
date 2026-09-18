@@ -1,4 +1,4 @@
-# StartupReady AI Platform
+# StartupReady AI EVALUATION Platform
 
 Full-stack implementation of the 15-step startup evaluation from the supplied brief.
 
