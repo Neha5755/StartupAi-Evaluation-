@@ -2,7 +2,7 @@
 
 Full-stack implementation of the 15-step startup evaluation from the supplied brief.
 
-## Run
+## Run locally
 
 Requires Python 3.10+. No third-party packages or Node.js are needed.
 
@@ -12,17 +12,26 @@ cd backend
 python app.py
 ```
 
-Terminal 2:
+Open http://localhost:3001. This single Python server serves both the frontend and backend API.
+
+Optional - if you prefer to serve the frontend separately during development:
+
 ```powershell
 cd frontend
 python server.py
 ```
 
-Open http://localhost:5173.
+Then open http://localhost:5173.
 
 The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`.
 
 The backend is implemented in Python using the standard library (`http.server`, `json`, and `pathlib`), so it is suitable for a Python full-stack internship assignment without dependency setup.
+
+## Deploy on Render
+
+The included `render.yaml` deploys the complete app as one Python web service. Push the repository to GitHub, then in Render select **New > Blueprint**, connect the repository, and deploy. Render reads `render.yaml` automatically. The deployed site is available at the supplied `onrender.com` URL.
+
+Important: assessment data is saved in a local JSON file. This is suitable for a demo, but Render's filesystem is not persistent across deploys/restarts. For production, replace it with PostgreSQL or another database.
 
 ## Included
 

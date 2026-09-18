@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: startupready-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python backend/app.py
+    healthCheckPath: /api/health
+    autoDeploy: true

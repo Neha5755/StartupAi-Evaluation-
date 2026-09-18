@@ -1,0 +1,8 @@
+# Python bytecode and local-only assessment data
+__pycache__/
+*.py[cod]
+backend/data/
+
+# Editor and operating-system files
+.vscode/
+.DS_Store

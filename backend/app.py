@@ -5,15 +5,17 @@ Run with: python app.py
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 PORT = int(os.environ.get("PORT", "3001"))
 DATA_FILE = Path(__file__).parent / "data" / "assessment.json"
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 CATEGORIES = [
     ("Vision & Innovation", ["startupName", "industry", "summary", "vision"]),
@@ -127,7 +129,27 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             return self.wfile.write(content)
-        self.send_json({"error": "Route not found"}, HTTPStatus.NOT_FOUND)
+        if route.startswith("/api/"):
+            return self.send_json({"error": "Route not found"}, HTTPStatus.NOT_FOUND)
+        self.serve_frontend_file(route)
+
+    def serve_frontend_file(self, route: str) -> None:
+        """Serve the browser app from frontend/ for one-service deployment."""
+        requested = "index.html" if route in {"", "/"} else unquote(route).lstrip("/")
+        candidate = (FRONTEND_DIR / requested).resolve()
+        try:
+            candidate.relative_to(FRONTEND_DIR.resolve())
+        except ValueError:
+            return self.send_json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
+        if not candidate.is_file():
+            return self.send_json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
+        content = candidate.read_bytes()
+        content_type = mimetypes.guess_type(candidate.name)[0] or "application/octet-stream"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", f"{content_type}; charset=utf-8")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
 
     def do_PUT(self) -> None:
         if urlparse(self.path).path != "/api/assessment":
