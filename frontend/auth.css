@@ -1,0 +1,5 @@
+#profile{border:0;color:#5948df;background:#eeecff;padding:10px;border-radius:50%;font-size:12px;font-weight:bold;cursor:pointer;min-width:39px;min-height:39px}
+.auth-wrap{grid-column:1/-1;display:grid;place-items:center;min-height:calc(100vh - 145px)}
+.auth-card{width:min(100%,430px);background:#fff;border:1px solid #e1e6f0;border-radius:15px;padding:34px;box-shadow:0 14px 40px #28365414}
+.auth-brand{font-size:19px;font-weight:bold;color:#263553}.auth-brand i{color:#604ddd}.auth-card h1{margin:26px 0 8px;font-size:27px}.auth-card p{color:#718099;line-height:1.5}.auth-card label{margin-top:16px}.auth-card input{margin-top:6px}.auth-submit{width:100%;margin-top:22px}.auth-error{color:#bd3744;font-size:12px;margin-top:10px;min-height:17px}.auth-switch{text-align:center;margin:21px 0 0!important}.auth-switch button{border:0;background:none;color:#5645d5;font-weight:bold;cursor:pointer}
+@media(max-width:800px){.auth-wrap{min-height:calc(100vh - 110px)}.auth-card{padding:26px 21px}}

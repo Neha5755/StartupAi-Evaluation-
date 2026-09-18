@@ -7,6 +7,9 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import hashlib
+import secrets
+import re
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,6 +18,7 @@ from urllib.parse import unquote, urlparse
 
 PORT = int(os.environ.get("PORT", "3001"))
 DATA_FILE = Path(__file__).parent / "data" / "assessment.json"
+USERS_FILE = Path(__file__).parent / "data" / "users.json"
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 CATEGORIES = [
@@ -45,6 +49,26 @@ def load_assessment() -> dict:
 def save_assessment(assessment: dict) -> None:
     DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
     DATA_FILE.write_text(json.dumps(assessment, indent=2), encoding="utf-8")
+
+
+def load_users() -> list[dict]:
+    try:
+        return json.loads(USERS_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def save_users(users: list[dict]) -> None:
+    USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    USERS_FILE.write_text(json.dumps(users, indent=2), encoding="utf-8")
+
+
+def password_hash(password: str, salt: str) -> str:
+    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100_000).hex()
+
+
+def public_user(user: dict) -> dict:
+    return {"name": user["name"], "email": user["email"]}
 
 
 def has_value(value: object) -> bool:
@@ -166,7 +190,12 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
             self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/analyze":
+        route = urlparse(self.path).path
+        if route == "/api/auth/signup":
+            return self.signup()
+        if route == "/api/auth/login":
+            return self.login()
+        if route != "/api/analyze":
             return self.send_json({"error": "Route not found"}, HTTPStatus.NOT_FOUND)
         try:
             incoming = self.read_json()
@@ -178,6 +207,39 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
                 "insight": f"Current readiness is {scorecard['overall']}/100. Add measurable proof, customer evidence and a dated next milestone.",
                 "actions": ["Add one measurable outcome.", "Attach evidence where available.", "Assign an owner and deadline."],
             })
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+    def signup(self) -> None:
+        try:
+            incoming = self.read_json()
+            name = str(incoming.get("name", "")).strip()
+            email = str(incoming.get("email", "")).strip().lower()
+            password = str(incoming.get("password", ""))
+            if len(name) < 2 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+                raise ValueError("Enter a valid name and email address.")
+            if len(password) < 8:
+                raise ValueError("Password must contain at least 8 characters.")
+            users = load_users()
+            if any(user["email"] == email for user in users):
+                return self.send_json({"error": "An account already exists for this email."}, HTTPStatus.CONFLICT)
+            salt = secrets.token_hex(16)
+            user = {"name": name, "email": email, "salt": salt, "passwordHash": password_hash(password, salt)}
+            users.append(user)
+            save_users(users)
+            self.send_json({"user": public_user(user)}, HTTPStatus.CREATED)
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+    def login(self) -> None:
+        try:
+            incoming = self.read_json()
+            email = str(incoming.get("email", "")).strip().lower()
+            password = str(incoming.get("password", ""))
+            user = next((entry for entry in load_users() if entry["email"] == email), None)
+            if not user or not secrets.compare_digest(password_hash(password, user["salt"]), user["passwordHash"]):
+                return self.send_json({"error": "Incorrect email or password."}, HTTPStatus.UNAUTHORIZED)
+            self.send_json({"user": public_user(user)})
         except (ValueError, json.JSONDecodeError) as error:
             self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
 
