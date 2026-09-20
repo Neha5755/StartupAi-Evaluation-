@@ -14,15 +14,6 @@ python app.py
 
 Open http://localhost:3001. This single Python server serves both the frontend and backend API.
 
-Optional - if you prefer to serve the frontend separately during development:
-
-```powershell
-cd frontend
-python server.py
-```
-
-Then open http://localhost:5173.
-
 The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`.
 
 The backend is implemented in Python using the standard library (`http.server`, `json`, and `pathlib`), so it is suitable for a Python full-stack internship assignment without dependency setup.
