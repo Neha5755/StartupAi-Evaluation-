@@ -7,6 +7,7 @@ Full-stack implementation of the 15-step startup evaluation from the supplied br
 Requires Python 3.10+. No third-party packages or Node.js are needed.
 
 Terminal 1:
+
 ```powershell
 cd backend
 python app.py
