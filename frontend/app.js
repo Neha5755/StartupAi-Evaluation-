@@ -64,7 +64,7 @@ const steps = [
             "Describe the customer pain",
             1,
           ],
-          ["customer", "Who experiences it?", "text", "Primary customer"],
+          ["problemCustomer", "Who experiences it?", "text", "Primary customer"],
           [
             "frequency",
             "How frequently?",
@@ -475,7 +475,7 @@ const steps = [
     ],
   ],
   [
-    "Final AI evaluation",
+    "Final evaluation",
     "YOUR SCORECARD",
     "Review your readiness score and priorities.",
     "Use this as a decision aid, then return to strengthen evidence.",
@@ -488,11 +488,28 @@ const $ = (x) => document.querySelector(x),
       /[&<>"]/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
     );
+function requiredFields(stepNumber) {
+  return (steps[stepNumber - 1]?.[4] || [])
+    .flatMap((section) => section[1])
+    .filter((field) => field[2] !== "upload");
+}
+function missingFields(stepNumber) {
+  return requiredFields(stepNumber).filter(
+    (field) => !String(S.values[field[0]] || "").trim(),
+  );
+}
+function availableStepCount() {
+  for (let step = 1; step < 15; step += 1) {
+    if (missingFields(step).length) return step;
+  }
+  return 15;
+}
 function nav() {
   $("#nav").innerHTML = steps
+    .slice(0, availableStepCount())
     .map(
       (x, i) =>
-        `<button class="${S.step == i + 1 ? "active" : ""} ${steps[i][4].some((a) => a[1].some((f) => S.values[f[0]])) ? "done" : ""}" onclick="go(${i + 1})">${i + 1}. ${x[0]}</button>`,
+        `<button class="${S.step == i + 1 ? "active" : ""} ${i < 14 && !missingFields(i + 1).length ? "done" : ""}" onclick="go(${i + 1})">${i + 1}. ${x[0]}</button>`,
     )
     .join("");
 }
@@ -501,10 +518,10 @@ function field(f) {
     v = S.values[k] || "",
     c = full ? "field full" : "field";
   if (t === "choice")
-    return `<div class="${c}"><label>${l}</label><div class="chips">${p.map((q) => `<label><input type="radio" name="${k}" value="${q}" ${v === q ? "checked" : ""}><span>${q}</span></label>`).join("")}</div></div>`;
+    return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><div class="chips">${p.map((q) => `<label><input type="radio" name="${k}" value="${q}" ${v === q ? "checked" : ""} required><span>${q}</span></label>`).join("")}</div></div>`;
   if (t === "upload")
     return `<div class="${c}"><label>${l}</label><label class="upload">⇧ Upload supporting document<br><small>${p}</small><input type="file" name="${k}"></label><small>${S.uploads[k] ? "Attached: " + e(S.uploads[k]) : ""}</small></div>`;
-  return `<div class="${c}"><label>${l}</label><${t === "textarea" ? "textarea" : "input"} name="${k}" ${t === "textarea" ? "" : `type="${t}"`} placeholder="${p}">${t === "textarea" ? e(v) : ""}</${t === "textarea" ? "textarea" : "input"}>${t === "textarea" ? `<button class="ai" type="button" onclick="improve('${k}')">✦ Improve with AI</button>` : ""}</div>`;
+  return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><${t === "textarea" ? "textarea" : "input"} name="${k}" ${t === "textarea" ? "" : `type="${t}"`} placeholder="${p}" required>${t === "textarea" ? e(v) : ""}</${t === "textarea" ? "textarea" : "input"}></div>`;
 }
 function render() {
   if (!S.user) return renderAuth("login");
@@ -512,10 +529,13 @@ function render() {
   let x = steps[S.step - 1],
     pc = Math.round(((S.step - 1) / 14) * 100);
   $("#app").innerHTML =
-    `<div><div class="crumb">Step ${S.step} of 15 · ~ ${40 - (S.step - 1) * 2} min left</div><div class="progress"><i style="width:${pc}%"></i></div><div class="heading"><div><div class="tag">${x[1]}</div><h1>${x[0]}</h1><p>${x[2]}</p></div><button class="help" onclick="$('.hint').style.display=$('.hint').style.display==='block'?'none':'block'">? Why are we asking?</button></div><div class="hint">${x[3]}</div><form id="form">${x[4].map((a) => `<div class="formbox"><h2>${a[0]}</h2><p>Share what you know today - you can refine it anytime.</p><div class="fields">${a[1].map(field).join("")}</div></div>`).join("")}</form><div class="actions"><button class="btn" onclick="go(Math.min(15,S.step+1))">Skip & complete later</button><div><button class="btn" onclick="go(Math.max(1,S.step-1))">Back</button><button class="btn primary" onclick="go(S.step+1)">Save & continue →</button></div></div></div><div class="copilot"><h3>✦ AI Copilot</h3><div id="ai">Complete this section and I’ll identify the strongest signals and your next improvement.</div><button onclick="analyze()">✦ Analyze this section</button><div class="score"><small>LIVE READINESS SCORE</small><b id="live">${S.card?.overall || 35}/100</b></div></div>`;
+    `<div><div class="crumb">Step ${S.step} of 15 · ~ ${40 - (S.step - 1) * 2} min left</div><div class="progress"><i style="width:${pc}%"></i></div><div class="heading"><div><div class="tag">${x[1]}</div><h1>${x[0]}</h1><p>${x[2]}</p></div><button class="help" onclick="$('.hint').style.display=$('.hint').style.display==='block'?'none':'block'">? Why are we asking?</button></div><div class="hint">${x[3]}</div><p class="required-note"><span class="required-mark">*</span> Required fields must be completed before you continue.</p>${S.validationError ? `<div class="validation-error" role="alert">${e(S.validationError)}</div>` : ""}<form id="form">${x[4].map((a) => `<div class="formbox"><h2>${a[0]}</h2><p>Share what you know today - you can refine it anytime.</p><div class="fields">${a[1].map(field).join("")}</div></div>`).join("")}</form><div class="actions"><button class="btn" onclick="go(Math.max(1,S.step-1))">Back</button><button class="btn primary" onclick="go(S.step+1)">Save & continue →</button></div></div>`;
   document
     .querySelectorAll("#form input,#form textarea")
-    .forEach((q) => (q.oninput = change));
+    .forEach((q) => {
+      q.oninput = change;
+      q.onchange = change;
+    });
   document
     .querySelectorAll("input[type=file]")
     .forEach((q) => (q.onchange = change));
@@ -542,8 +562,6 @@ async function save() {
       d = await r.json();
     S.card = d.scorecard;
     $("#saved").textContent = "● All changes saved";
-    let l = $("#live");
-    if (l) l.textContent = S.card.overall + "/100";
     nav();
   } catch {
     $("#saved").textContent = "● Backend not connected";
@@ -555,35 +573,26 @@ function setMobileNav(open) {
   $("#menuToggle").setAttribute("aria-expanded", String(open));
 }
 async function go(n) {
+  let target = Math.max(1, Math.min(15, n));
+  if (target > S.step) {
+    for (let step = S.step; step < target; step += 1) {
+      let missing = missingFields(step);
+      if (missing.length) {
+        S.step = step;
+        S.validationError = `Complete all required fields before continuing. Missing: ${missing.map((field) => field[1]).join(", ")}.`;
+        setMobileNav(false);
+        render();
+        toast("Complete the required fields to continue.");
+        return;
+      }
+    }
+  }
+  S.validationError = "";
   setMobileNav(false);
   await save();
-  S.step = Math.min(15, n);
+  S.step = target;
   scrollTo(0, 0);
   render();
-}
-function improve(k) {
-  let q = $(`[name="${k}"]`);
-  if (!q.value) return toast("Write a draft first.");
-  q.value =
-    q.value.trim() +
-    " This is focused on measurable customer outcomes, credible execution and sustainable growth.";
-  S.values[k] = q.value;
-  save();
-  toast("AI improved the investor focus.");
-}
-async function analyze() {
-  try {
-    let r = await fetch(A + "/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ values: S.values }),
-      }),
-      d = await r.json();
-    $("#ai").innerHTML =
-      `<b>${d.headline}</b><p>${d.insight}</p><ul>${d.actions.map((x) => `<li>${x}</li>`).join("")}</ul>`;
-  } catch {
-    toast("Start the backend first.");
-  }
 }
 function final() {
   let c = S.card || {
@@ -593,7 +602,7 @@ function final() {
     recommendations: [],
   };
   $("#app").innerHTML =
-    `<div class="final"><div class="hero"><div class="tag" style="color:#ddd8ff">STARTUPREADY AI SCORECARD</div><h1>${e(S.values.startupName || "Your startup")} is ${c.verdict}</h1><p>A focused plan for your next investor conversation.</p><div class="big">${c.overall}<small>/100</small></div></div><p><a class="btn primary" href="${A}/report">↓ Download executive report</a></p><div class="grid">${c.scores.map((x) => `<div class="card"><small>${x.label}</small><b>${x.score}/100</b><div class="bar"><i style="width:${x.score}%"></i></div></div>`).join("")}</div><div class="recommend"><h2>Top improvement recommendations</h2><ul>${c.recommendations.map((x) => `<li><b>[${x.priority}] ${x.area}:</b> ${x.improvement} ${x.impact} · ${x.owner}</li>`).join("")}</ul><h2>AI SWOT starter</h2><p>Strengths: your highest-scoring evidence. Weaknesses: missing detail. Opportunities: recommendations above. Threats: the documented risk areas.</p><button class="btn" onclick="go(1)">Return to assessment</button></div></div>`;
+    `<div class="final"><div class="hero"><div class="tag" style="color:#ddd8ff">STARTUPREADY SCORECARD</div><h1>${e(S.values.startupName || "Your startup")} is ${c.verdict}</h1><p>A focused plan for your next investor conversation.</p><div class="big">${c.overall}<small>/100</small></div></div><p><a class="btn primary" href="${A}/report">↓ Download executive report</a></p><div class="grid">${c.scores.map((x) => `<div class="card"><small>${x.label}</small><b>${x.score}/100</b><div class="bar"><i style="width:${x.score}%"></i></div></div>`).join("")}</div><div class="recommend"><h2>Top improvement recommendations</h2><ul>${c.recommendations.map((x) => `<li><b>[${x.priority}] ${x.area}:</b> ${x.improvement} ${x.impact} · ${x.owner}</li>`).join("")}</ul><h2>SWOT summary</h2><p>Strengths: your highest-scoring evidence. Weaknesses: missing detail. Opportunities: recommendations above. Threats: the documented risk areas.</p><button class="btn" onclick="go(1)">Return to assessment</button></div></div>`;
   nav();
 }
 function toast(x) {
@@ -606,7 +615,7 @@ function renderAuth(mode) {
   $("#sidebar").classList.remove("open");
   $("#navBackdrop").classList.remove("open");
   $("#app").innerHTML =
-    `<div class="auth-wrap"><section class="auth-card"><div class="auth-brand">✦ StartupReady <i>AI</i></div><h1>${mode === "login" ? "Welcome back" : "Create your account"}</h1><p>${mode === "login" ? "Sign in to continue building your funding-readiness profile." : "Start your guided startup evaluation in a few seconds."}</p><form id="authForm">${mode === "signup" ? '<label>Full name<input name="name" placeholder="Your name" required></label>' : ""}<label>Email address<input name="email" type="email" placeholder="you@example.com" required></label><label>Password<input name="password" type="password" placeholder="At least 8 characters" required></label><button class="btn primary auth-submit">${mode === "login" ? "Sign in" : "Create account"}</button><div id="authError" class="auth-error"></div></form><p class="auth-switch">${mode === "login" ? "New to StartupReady?" : "Already have an account?"} <button type="button" onclick="renderAuth('${mode === "login" ? "signup" : "login"}')">${mode === "login" ? "Create an account" : "Sign in"}</button></p></section></div>`;
+    `<div class="auth-wrap"><section class="auth-card"><div class="auth-brand">✦ StartupReady</div><h1>${mode === "login" ? "Welcome back" : "Create your account"}</h1><p>${mode === "login" ? "Sign in to continue building your funding-readiness profile." : "Start your guided startup evaluation in a few seconds."}</p><form id="authForm">${mode === "signup" ? '<label>Full name<input name="name" placeholder="Your name" required></label>' : ""}<label>Email address<input name="email" type="email" placeholder="you@example.com" required></label><label>Password<input name="password" type="password" placeholder="At least 8 characters" required></label><button class="btn primary auth-submit">${mode === "login" ? "Sign in" : "Create account"}</button><div id="authError" class="auth-error"></div></form><p class="auth-switch">${mode === "login" ? "New to StartupReady?" : "Already have an account?"} <button type="button" onclick="renderAuth('${mode === "login" ? "signup" : "login"}')">${mode === "login" ? "Create an account" : "Sign in"}</button></p></section></div>`;
   $("#authForm").onsubmit = (e) => submitAuth(e, mode);
 }
 async function submitAuth(event, mode) {
@@ -615,6 +624,18 @@ async function submitAuth(event, mode) {
     payload = Object.fromEntries(form.entries()),
     error = $("#authError");
   error.textContent = "";
+  if (!String(payload.email || "").trim() || !String(payload.password || "")) {
+    error.textContent = "Enter your email address and password.";
+    return;
+  }
+  if (mode === "signup" && !String(payload.name || "").trim()) {
+    error.textContent = "Enter your full name.";
+    return;
+  }
+  if (mode === "signup" && String(payload.password).length < 8) {
+    error.textContent = "Password must contain at least 8 characters.";
+    return;
+  }
   try {
     let r = await fetch(A + "/auth/" + mode, {
         method: "POST",

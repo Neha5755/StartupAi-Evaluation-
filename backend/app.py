@@ -1,4 +1,4 @@
-"""StartupReady AI backend - standard-library Python API.
+"""StartupReady backend - standard-library Python API.
 
 Run with: python app.py
 """
@@ -139,7 +139,7 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
         if route == "/api/report":
             card = build_scorecard(assessment["values"])
             lines = [
-                "STARTUPREADY AI EXECUTIVE REPORT", "=" * 36,
+                "STARTUPREADY EXECUTIVE REPORT", "=" * 36,
                 f"Startup: {assessment['values'].get('startupName', 'Your Startup')}",
                 f"Funding readiness: {card['overall']}/100", card["verdict"], "", "CATEGORY SCORES",
             ]
@@ -195,20 +195,7 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
             return self.signup()
         if route == "/api/auth/login":
             return self.login()
-        if route != "/api/analyze":
-            return self.send_json({"error": "Route not found"}, HTTPStatus.NOT_FOUND)
-        try:
-            incoming = self.read_json()
-            values = incoming.get("values", load_assessment()["values"])
-            scorecard = build_scorecard(values)
-            self.send_json({
-                "score": scorecard["overall"],
-                "headline": "Your case is taking shape.",
-                "insight": f"Current readiness is {scorecard['overall']}/100. Add measurable proof, customer evidence and a dated next milestone.",
-                "actions": ["Add one measurable outcome.", "Attach evidence where available.", "Assign an owner and deadline."],
-            })
-        except (ValueError, json.JSONDecodeError) as error:
-            self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+        return self.send_json({"error": "Route not found"}, HTTPStatus.NOT_FOUND)
 
     def signup(self) -> None:
         try:
@@ -236,6 +223,8 @@ class StartupReadyHandler(BaseHTTPRequestHandler):
             incoming = self.read_json()
             email = str(incoming.get("email", "")).strip().lower()
             password = str(incoming.get("password", ""))
+            if not email or not password:
+                raise ValueError("Email address and password are required.")
             user = next((entry for entry in load_users() if entry["email"] == email), None)
             if not user or not secrets.compare_digest(password_hash(password, user["salt"]), user["passwordHash"]):
                 return self.send_json({"error": "Incorrect email or password."}, HTTPStatus.UNAUTHORIZED)
