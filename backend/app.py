@@ -123,7 +123,12 @@ def load_assessment() -> dict:
     if not DATA_FILE.exists():
         return sample_assessment()
     try:
-        return json.loads(DATA_FILE.read_text(encoding="utf-8"))
+        assessment = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+        # Replace a legacy placeholder or abandoned test record with the full
+        # demo data. Assessments with five or more answers remain untouched.
+        if len(assessment.get("values", {})) < 5:
+            return sample_assessment()
+        return assessment
     except (OSError, json.JSONDecodeError):
         return sample_assessment()
 
