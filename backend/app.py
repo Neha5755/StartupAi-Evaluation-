@@ -36,14 +36,96 @@ CATEGORIES = [
     ("Investment Readiness", ["funding", "useOfFunds", "pitchDeck"]),
 ]
 
+# A complete example that is returned on a fresh installation, before a user
+# saves their own assessment. It makes the full 15-step journey easy to demo.
+SAMPLE_ASSESSMENT = {
+    "values": {
+        "startupName": "GreenLoop",
+        "industry": "Climate technology",
+        "stage": "MVP",
+        "founderCount": "2",
+        "summary": "GreenLoop helps apartment communities reduce waste through smart sorting and reward tracking.",
+        "vision": "Make sustainable waste management simple for every urban community.",
+        "mission": "Turn household waste data into measurable recycling outcomes.",
+        "problem": "Apartment residents lack clear sorting guidance and building managers cannot measure waste diversion.",
+        "problemCustomer": "Apartment residents and property managers",
+        "frequency": "Daily",
+        "solution": "A mobile app and QR-enabled bins guide sorting, track participation and provide building dashboards.",
+        "difference": "The product combines resident rewards with property-level diversion data in one workflow.",
+        "interviews": "42",
+        "market": "Urban waste management technology",
+        "customer": "Mid-size apartment communities in Indian metro cities",
+        "tam": "$1.2B",
+        "sam": "$180M",
+        "som": "$12M",
+        "competitors": "Manual collection services, generic resident apps and waste-management contractors.",
+        "advantage": "Actionable sorting guidance and live participation data tailored to apartment operations.",
+        "productStatus": "MVP",
+        "features": "QR bin scanning, sorting guidance, resident rewards, manager dashboard and monthly impact reports.",
+        "roadmap": "Pilot in 10 communities, add contractor integrations, then expand to 100 communities.",
+        "users": "1250",
+        "stack": "Python, FastAPI-ready service layer, React, PostgreSQL and AWS cloud services.",
+        "security": "Role-based access, password hashing, HTTPS, encrypted backups and privacy-by-design practices.",
+        "scaling": "Stateless services, managed database backups, monitoring and a queued notification service.",
+        "revenueModel": "Subscription",
+        "pricing": "Property managers pay ₹12 per apartment per month, with an annual community plan.",
+        "cac": "1800",
+        "ltv": "21600",
+        "grossMargin": "72",
+        "founders": "One founder has 6 years in property operations; the other has 5 years building mobile products.",
+        "team": "Two founders, one full-stack engineer, one product designer and a part-time waste operations advisor.",
+        "hiring": "Hire a customer success lead in month 3 and two sales associates after 25 paying communities.",
+        "advisors": "A sustainability consultant and a former property-management executive advise the team.",
+        "revenue": "540000",
+        "burn": "180000",
+        "runway": "14",
+        "forecast": "Reach ₹2.4M annual recurring revenue in year 1, ₹9M in year 2 and ₹24M in year 3.",
+        "incorporated": "Yes",
+        "privacy": "Published",
+        "ip": "Trademark",
+        "compliance": "GST registered; privacy policy published; DPDP readiness review planned before scale-up.",
+        "channels": "Direct founder-led sales, property-management partners and sustainability consultants.",
+        "salesCycle": "30 to 45 days",
+        "conversion": "18",
+        "marketing": "Case studies, property-manager webinars, local sustainability events and partner referrals.",
+        "customers": "8",
+        "mrr": "45000",
+        "growth": "22",
+        "partnerships": "Pilot partnership with two property-management companies and a city recycling nonprofit.",
+        "environment": "Each active community reports kilograms of waste diverted from landfill each month.",
+        "social": "Residents receive accessible recycling education and local waste workers receive clearer sorting inputs.",
+        "governance": "Monthly impact reviews, consent-based data collection and founder-level accountability for privacy.",
+        "sdgs": "SDG 11 Sustainable Cities, SDG 12 Responsible Consumption and SDG 13 Climate Action.",
+        "funding": "15000000",
+        "useOfFunds": "45% product and engineering, 35% sales and customer success, 20% pilot operations and working capital.",
+        "pitchDeck": "Ready",
+        "dataRoom": "In progress",
+        "marketRisk": "Property managers may delay adoption; mitigate with short pilots and quantified waste-diversion reports.",
+        "technologyRisk": "QR codes or resident onboarding may fail; mitigate with offline guidance and assisted onboarding.",
+        "financialRisk": "Long sales cycles can affect cash flow; maintain 14 months runway and track CAC payback monthly.",
+        "controls": "Founders review a monthly risk register, assign owners and maintain a quarterly contingency plan.",
+    },
+    "uploads": {
+        "validationUpload": "greenloop-customer-interviews.pdf",
+        "productUpload": "greenloop-product-demo.pdf",
+        "financialUpload": "greenloop-financial-model.pdf",
+    },
+    "updatedAt": "2026-09-29T00:00:00+00:00",
+}
+
+
+def sample_assessment() -> dict:
+    """Return an independent copy so requests cannot mutate the seed data."""
+    return json.loads(json.dumps(SAMPLE_ASSESSMENT))
+
 
 def load_assessment() -> dict:
     if not DATA_FILE.exists():
-        return {"values": {}, "uploads": {}, "updatedAt": None}
+        return sample_assessment()
     try:
         return json.loads(DATA_FILE.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"values": {}, "uploads": {}, "updatedAt": None}
+        return sample_assessment()
 
 
 def save_assessment(assessment: dict) -> None:

@@ -1,4 +1,4 @@
-# StartupReady AI EVALUATION Platform
+# StartupReady Evaluation Platform
 
 Full-stack implementation of the 15-step startup evaluation from the supplied brief.
 
@@ -15,7 +15,7 @@ python app.py
 
 Open http://localhost:3001. This single Python server serves both the frontend and backend API.
 
-The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`.
+The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`. On a fresh run, it loads the complete **GreenLoop** sample assessment, so every stage has realistic information for an interview demonstration. The first autosave replaces this sample with the current assessment data.
 
 The backend is implemented in Python using the standard library (`http.server`, `json`, and `pathlib`), so it is suitable for a Python full-stack internship assignment without dependency setup.
 
@@ -28,6 +28,6 @@ Important: assessment data is saved in a local JSON file. This is suitable for a
 ## Included
 
 - 15 guided evaluation stages with all brief subject areas
-- progress, autosave, Save & Resume, skip, context help and uploads
-- local AI-style feedback and "Improve with AI" writing action
-- live score, category scorecard, risk flags, recommendations, SWOT and downloadable report
+- strict required-field validation that unlocks one step at a time
+- progress, autosave, context help and optional supporting-document uploads
+- category scorecard, recommendations, SWOT summary and downloadable report

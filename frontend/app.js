@@ -29,7 +29,7 @@ const steps = [
             "choice",
             ["Idea", "Prototype", "MVP", "Beta", "Live product"],
           ],
-          ["founders", "Number of founders", "number", "2"],
+          ["founderCount", "Number of founders", "number", "2"],
         ],
       ],
       [
