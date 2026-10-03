@@ -27,7 +27,7 @@ Important: assessment data is saved in a local JSON file. This is suitable for a
 
 ## Included
 
-- 15 guided evaluation stages with all brief subject areas
+- 14 concise assessment stages plus a final scorecard; each stage asks only 2-3 essential questions
 - strict required-field validation that unlocks one step at a time
 - progress, autosave, context help and optional supporting-document uploads
 - category scorecard, recommendations, SWOT summary and downloadable report
