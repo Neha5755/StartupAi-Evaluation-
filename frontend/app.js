@@ -6,6 +6,7 @@ const A =
   S = {
     step: 1,
     values: {},
+    examples: {},
     uploads: {},
     card: null,
     t: null,
@@ -20,10 +21,7 @@ const steps = [
     [
       [
         "Startup snapshot",
-        [
-          ["startupName", "Startup name", "text", "Acme Labs"],
-          ["industry", "Industry", "text", "Climate tech"],
-        ],
+        [["startupName", "Startup name", "text", "Acme Labs"]],
       ],
       [
         "Business summary",
@@ -55,7 +53,6 @@ const steps = [
             "Describe the customer pain",
             1,
           ],
-          ["problemCustomer", "Who experiences it?", "text", "Primary customer"],
         ],
       ],
       [
@@ -88,13 +85,6 @@ const steps = [
       [
         "Competition",
         [
-          [
-            "competitors",
-            "Top competitors",
-            "textarea",
-            "Competitors and alternatives",
-            1,
-          ],
         ],
       ],
     ],
@@ -115,7 +105,6 @@ const steps = [
             ["Idea", "Prototype", "MVP", "Beta", "Live product"],
           ],
           ["features", "Core features", "textarea", "What users can do", 1],
-          ["users", "Active users", "number", "0"],
         ],
       ],
     ],
@@ -175,7 +164,6 @@ const steps = [
             "Packages and price points",
             1,
           ],
-          ["ltv", "Customer lifetime value", "number", "0"],
         ],
       ],
     ],
@@ -217,7 +205,6 @@ const steps = [
         "Metrics & planning",
         [
           ["revenue", "Annual revenue", "number", "0"],
-          ["burn", "Monthly burn rate", "number", "0"],
           ["runway", "Runway (months)", "number", "0"],
         ],
       ],
@@ -260,7 +247,6 @@ const steps = [
             1,
           ],
           ["salesCycle", "Sales cycle", "text", "Typical close time"],
-          ["conversion", "Conversion rate (%)", "number", "0"],
         ],
       ],
     ],
@@ -276,7 +262,6 @@ const steps = [
         [
           ["customers", "Customers", "number", "0"],
           ["mrr", "MRR", "number", "0"],
-          ["growth", "Monthly growth (%)", "number", "0"],
         ],
       ],
     ],
@@ -319,7 +304,6 @@ const steps = [
             "Milestones and allocation",
             1,
           ],
-          ["pitchDeck", "Pitch deck", "choice", ["No", "In progress", "Ready"]],
         ],
       ],
     ],
@@ -336,13 +320,6 @@ const steps = [
           [
             "marketRisk",
             "Market and competition risk",
-            "textarea",
-            "Risk, likelihood and impact",
-            1,
-          ],
-          [
-            "financialRisk",
-            "Financial and operational risk",
             "textarea",
             "Risk, likelihood and impact",
             1,
@@ -397,15 +374,22 @@ function nav() {
     )
     .join("");
 }
+function exampleHint(key, value) {
+  let example = String(S.examples[key] || "").trim();
+  return example && !String(value || "").trim()
+    ? `<small class="field-example">Example: ${e(example)}</small>`
+    : "";
+}
 function field(f) {
   let [k, l, t, p, full] = f,
     v = S.values[k] || "",
-    c = full ? "field full" : "field";
+    c = full ? "field full" : "field",
+    hint = exampleHint(k, v);
   if (t === "choice")
-    return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><div class="chips">${p.map((q) => `<label><input type="radio" name="${k}" value="${q}" ${v === q ? "checked" : ""} required><span>${q}</span></label>`).join("")}</div></div>`;
+    return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><div class="chips">${p.map((q) => `<label><input type="radio" name="${k}" value="${q}" ${v === q ? "checked" : ""} required><span>${q}</span></label>`).join("")}</div>${hint}</div>`;
   if (t === "upload")
     return `<div class="${c}"><label>${l}</label><label class="upload">⇧ Upload supporting document<br><small>${p}</small><input type="file" name="${k}"></label><small>${S.uploads[k] ? "Attached: " + e(S.uploads[k]) : ""}</small></div>`;
-  return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><${t === "textarea" ? "textarea" : "input"} name="${k}" ${t === "textarea" ? "" : `type="${t}"`} placeholder="${p}" required>${t === "textarea" ? e(v) : ""}</${t === "textarea" ? "textarea" : "input"}></div>`;
+  return `<div class="${c}"><label>${l} <span class="required-mark">*</span></label><${t === "textarea" ? "textarea" : "input"} name="${k}" ${t === "textarea" ? "" : `type="${t}"`} placeholder="${p}" required>${t === "textarea" ? e(v) : ""}</${t === "textarea" ? "textarea" : "input"}>${hint}</div>`;
 }
 function render() {
   if (!S.user) return renderAuth("login");
@@ -558,6 +542,7 @@ $("#navBackdrop").onclick = () => setMobileNav(false);
   try {
     let d = await (await fetch(A + "/assessment")).json();
     S.values = d.values || {};
+    S.examples = d.examples || {};
     S.uploads = d.uploads || {};
     S.card = await (await fetch(A + "/scorecard")).json();
   } catch {}

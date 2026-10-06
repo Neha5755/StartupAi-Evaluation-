@@ -22,87 +22,82 @@ USERS_FILE = Path(__file__).parent / "data" / "users.json"
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 CATEGORIES = [
-    ("Startup Overview", ["startupName", "industry", "summary"]),
-    ("Problem & Solution", ["problem", "problemCustomer", "solution"]),
-    ("Market Opportunity", ["customer", "tam", "competitors"]),
-    ("Product Readiness", ["productStatus", "features", "users"]),
+    ("Startup Overview", ["startupName", "summary"]),
+    ("Problem & Solution", ["problem", "solution"]),
+    ("Market Opportunity", ["customer", "tam"]),
+    ("Product Readiness", ["productStatus", "features"]),
     ("Technology", ["stack", "security"]),
-    ("Business Model", ["revenueModel", "pricing", "ltv"]),
+    ("Business Model", ["revenueModel", "pricing"]),
     ("Team", ["founders", "team"]),
-    ("Financial Health", ["revenue", "burn", "runway"]),
+    ("Financial Health", ["revenue", "runway"]),
     ("Legal & Compliance", ["incorporated", "privacy"]),
-    ("Sales & GTM", ["channels", "salesCycle", "conversion"]),
-    ("Traction", ["customers", "mrr", "growth"]),
+    ("Sales & GTM", ["channels", "salesCycle"]),
+    ("Traction", ["customers", "mrr"]),
     ("ESG", ["environment", "social"]),
-    ("Investment Readiness", ["funding", "useOfFunds", "pitchDeck"]),
-    ("Risk Assessment", ["marketRisk", "financialRisk", "controls"]),
+    ("Investment Readiness", ["funding", "useOfFunds"]),
+    ("Risk Assessment", ["marketRisk", "controls"]),
 ]
 
-# A complete example that is returned on a fresh installation, before a user
-# saves their own assessment. It makes the full 15-step journey easy to demo.
-SAMPLE_ASSESSMENT = {
-    "values": {
+# These examples appear only when an empty input receives focus. They are not
+# stored as user answers and therefore never bypass step validation.
+SAMPLE_EXAMPLES = {
         "startupName": "GreenLoop",
-        "industry": "Climate technology",
         "summary": "GreenLoop helps apartment communities reduce waste through smart sorting and reward tracking.",
         "problem": "Apartment residents lack clear sorting guidance and building managers cannot measure waste diversion.",
-        "problemCustomer": "Apartment residents and property managers",
         "solution": "A mobile app and QR-enabled bins guide sorting, track participation and provide building dashboards.",
         "customer": "Mid-size apartment communities in Indian metro cities",
         "tam": "$1.2B",
-        "competitors": "Manual collection services, generic resident apps and waste-management contractors.",
         "productStatus": "MVP",
         "features": "QR bin scanning, sorting guidance, resident rewards, manager dashboard and monthly impact reports.",
-        "users": "1250",
         "stack": "Python backend, HTML/CSS/JavaScript frontend, JSON storage and Render hosting.",
         "security": "Role-based access, password hashing, HTTPS, encrypted backups and privacy-by-design practices.",
         "revenueModel": "Subscription",
         "pricing": "Property managers pay ₹12 per apartment per month, with an annual community plan.",
-        "ltv": "21600",
         "founders": "One founder has 6 years in property operations; the other has 5 years building mobile products.",
         "team": "Two founders, one full-stack engineer, one product designer and a part-time waste operations advisor.",
         "revenue": "540000",
-        "burn": "180000",
         "runway": "14",
         "incorporated": "Yes",
         "privacy": "Published",
         "channels": "Direct founder-led sales, property-management partners and sustainability consultants.",
         "salesCycle": "30 to 45 days",
-        "conversion": "18",
         "customers": "8",
         "mrr": "45000",
-        "growth": "22",
         "environment": "Each active community reports kilograms of waste diverted from landfill each month.",
         "social": "Residents receive accessible recycling education and local waste workers receive clearer sorting inputs.",
         "funding": "15000000",
         "useOfFunds": "45% product and engineering, 35% sales and customer success, 20% pilot operations and working capital.",
-        "pitchDeck": "Ready",
         "marketRisk": "Property managers may delay adoption; mitigate with short pilots and quantified waste-diversion reports.",
-        "financialRisk": "Long sales cycles can affect cash flow; maintain 14 months runway and track CAC payback monthly.",
         "controls": "Founders review a monthly risk register, assign owners and maintain a quarterly contingency plan.",
-    },
-    "uploads": {},
-    "updatedAt": "2026-09-29T00:00:00+00:00",
 }
 
 
-def sample_assessment() -> dict:
-    """Return an independent copy so requests cannot mutate the seed data."""
-    return json.loads(json.dumps(SAMPLE_ASSESSMENT))
+def blank_assessment() -> dict:
+    """Return empty answers with a separate, non-validating example template."""
+    return {
+        "values": {},
+        "uploads": {},
+        "examples": json.loads(json.dumps(SAMPLE_EXAMPLES)),
+        "templateVersion": 2,
+        "updatedAt": None,
+    }
 
 
 def load_assessment() -> dict:
     if not DATA_FILE.exists():
-        return sample_assessment()
+        return blank_assessment()
     try:
         assessment = json.loads(DATA_FILE.read_text(encoding="utf-8"))
-        # Replace a legacy placeholder or abandoned test record with the full
-        # demo data. Assessments with five or more answers remain untouched.
-        if len(assessment.get("values", {})) < 5:
-            return sample_assessment()
+        # Version 2 separates example hints from real answers. Older seeded
+        # records are deliberately reset so they cannot unlock every step.
+        if assessment.get("templateVersion") != 2:
+            return blank_assessment()
+        assessment.setdefault("values", {})
+        assessment.setdefault("uploads", {})
+        assessment.setdefault("examples", json.loads(json.dumps(SAMPLE_EXAMPLES)))
         return assessment
     except (OSError, json.JSONDecodeError):
-        return sample_assessment()
+        return blank_assessment()
 
 
 def save_assessment(assessment: dict) -> None:
@@ -138,7 +133,7 @@ def build_scorecard(values: dict) -> dict:
     scores = []
     for label, fields in CATEGORIES:
         filled = sum(has_value(values.get(field)) for field in fields)
-        score = round(35 + (filled / len(fields)) * 65)
+        score = round(35 + (filled / len(fields)) * 41)
         scores.append({"label": label, "score": score, "filled": filled, "total": len(fields)})
 
     overall = round(sum(item["score"] for item in scores) / len(scores))

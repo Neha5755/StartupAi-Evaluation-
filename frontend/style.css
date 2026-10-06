@@ -222,6 +222,22 @@ header > b {
   font-size: 12px;
 }
 
+.field-example {
+  display: none;
+  margin-top: 7px;
+  color: #5d51b5;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.field:focus-within .field-example {
+  display: block;
+}
+
+.chips + .field-example {
+  display: block;
+}
+
 .fields {
   display: grid;
   grid-template-columns: 1fr 1fr;

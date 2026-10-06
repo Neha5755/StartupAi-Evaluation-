@@ -15,7 +15,7 @@ python app.py
 
 Open http://localhost:3001. This single Python server serves both the frontend and backend API.
 
-The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`. On a fresh run, or when an old placeholder record is detected, it loads the complete **GreenLoop** sample assessment, so every stage has realistic information for an interview demonstration. A meaningful saved assessment is preserved.
+The API runs on port 3001 and saves completed work automatically in `backend/data/assessment.json`. GreenLoop example answers are supplied as focus-only hints for empty fields; they help demonstrate what to enter but never count as completed answers. This keeps the required-field validation meaningful.
 
 The backend is implemented in Python using the standard library (`http.server`, `json`, and `pathlib`), so it is suitable for a Python full-stack internship assignment without dependency setup.
 
