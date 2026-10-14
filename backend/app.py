@@ -129,12 +129,34 @@ def has_value(value: object) -> bool:
     return value is not None and str(value).strip() != ""
 
 
+def evidence_strength(field: str, value: object) -> int:
+    """Award one quality point for a detailed answer beyond the demo hint."""
+    text = str(value).strip()
+    if not text or text == SAMPLE_EXAMPLES.get(field, ""):
+        return 0
+    if field in {"productStatus", "revenueModel", "incorporated", "privacy"}:
+        return 1
+    if text.replace(".", "", 1).replace(",", "").isdigit():
+        return int(float(text.replace(",", "")) > 0)
+    words = text.split()
+    return int(len(text) >= 80 or (len(words) >= 10 and any(char.isdigit() for char in text)))
+
+
 def build_scorecard(values: dict) -> dict:
     scores = []
     for label, fields in CATEGORIES:
         filled = sum(has_value(values.get(field)) for field in fields)
-        score = round(35 + (filled / len(fields)) * 41)
-        scores.append({"label": label, "score": score, "filled": filled, "total": len(fields)})
+        completion_score = 35 + (filled / len(fields)) * 41
+        evidence = sum(evidence_strength(field, values.get(field)) for field in fields)
+        evidence_bonus = (evidence / len(fields)) * 24 if filled == len(fields) else 0
+        score = round(min(100, completion_score + evidence_bonus))
+        scores.append({
+            "label": label,
+            "score": score,
+            "filled": filled,
+            "total": len(fields),
+            "evidence": evidence,
+        })
 
     overall = round(sum(item["score"] for item in scores) / len(scores))
     verdict = (
@@ -152,7 +174,13 @@ def build_scorecard(values: dict) -> dict:
             "effort": "1-2 days" if index == 0 else "2-4 hours",
             "owner": "Founder" if index == 0 else "Functional lead",
         })
-    return {"overall": overall, "scores": scores, "verdict": verdict, "recommendations": recommendations}
+    return {
+        "overall": overall,
+        "scores": scores,
+        "verdict": verdict,
+        "recommendations": recommendations,
+        "scoringNote": "Complete essentials establish a 76/100 baseline. Detailed, evidence-backed answers can raise the score to 100.",
+    }
 
 
 class StartupReadyHandler(BaseHTTPRequestHandler):

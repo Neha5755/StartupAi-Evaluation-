@@ -222,6 +222,12 @@ header > b {
   font-size: 12px;
 }
 
+.score-note {
+  margin: 18px 0;
+  color: #596881;
+  font-size: 13px;
+}
+
 .field-example {
   display: none;
   margin-top: 7px;
